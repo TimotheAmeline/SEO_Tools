@@ -1,0 +1,30 @@
+# Python virtual environment and cache
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.envrc
+
+# Ignore all data, output, reports, cache, logs, and uploads folders recursively
+**/data/
+**/output/
+**/outputs/
+**/reports/
+**/Reports/
+**/cache/
+**/logs/
+**/uploads/
+
+# Ignore all CSV, Excel, JSON, and TXT files everywhere
+*.csv
+*.xlsx
+*.json
+*output*
+*run.txt
+data*.
+*export.txt
+*.zip
+
+# Uncomment to keep a sample file (example)
+#!InternalLinkingTool/data/example.csv 

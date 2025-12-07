@@ -1,0 +1,67 @@
+# SEO Auto QA Configuration
+
+# Crawler Settings
+crawler:
+  max_pages: 100
+  timeout: 30000  # milliseconds
+  user_agent: "SEO Auto QA Bot/1.0"
+  javascript_enabled: true
+  wait_for_network_idle: true
+  viewport:
+    width: 1920
+    height: 1080
+
+# Storage Settings
+storage:
+  database_url: "sqlite:///seo_qa.db"
+  history_retention_days: 90
+
+# Monitoring Settings
+monitoring:
+  urls:
+    - "https://example.com"
+  crawl_frequency: "daily"
+  alert_thresholds:
+    critical:
+      title_change: true
+      meta_description_change: true
+      h1_change: true
+      canonical_change: true
+    warning:
+      h2_change: true
+      image_alt_change: true
+      internal_link_change: true
+    info:
+      h3_change: true
+      schema_change: true
+
+# Notification Settings
+notifications:
+  email:
+    enabled: false
+    smtp_server: ""
+    smtp_port: 587
+    sender_email: ""
+    recipient_emails: []
+  slack:
+    enabled: false
+    webhook_url: ""
+
+# Performance Settings
+performance:
+  core_web_vitals:
+    lcp_threshold: 2.5  # seconds
+    cls_threshold: 0.1
+    fid_threshold: 100  # milliseconds
+
+# Element Importance Weights
+element_weights:
+  title: 1.0
+  meta_description: 0.9
+  h1: 0.8
+  canonical: 0.8
+  h2: 0.6
+  h3: 0.4
+  image_alt: 0.5
+  internal_links: 0.7
+  schema: 0.6 

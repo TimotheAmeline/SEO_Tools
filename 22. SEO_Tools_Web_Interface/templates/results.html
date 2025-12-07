@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Results & Downloads - SEO Tools Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-download me-2"></i>Results & Downloads</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+        <p class="text-muted">Download reports and analysis results from your SEO tools</p>
+    </div>
+</div>
+
+{% if files %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-file fa-2x mb-2"></i>
+                <h4>{{ files|length }}</h4>
+                <p class="mb-0">Total Files</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-file-excel fa-2x mb-2"></i>
+                <h4>
+                    {% set excel_count = 0 %}
+                    {% for file in files %}
+                        {% if file.name.endswith('.xlsx') or file.name.endswith('.xls') %}
+                            {% set excel_count = excel_count + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ excel_count }}
+                </h4>
+                <p class="mb-0">Excel Files</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-file-csv fa-2x mb-2"></i>
+                <h4>
+                    {% set csv_count = 0 %}
+                    {% for file in files %}
+                        {% if file.name.endswith('.csv') %}
+                            {% set csv_count = csv_count + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ csv_count }}
+                </h4>
+                <p class="mb-0">CSV Files</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h4>Today</h4>
+                <p class="mb-0">Latest Results</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Available Files</h4>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterFiles('all')">
+                All Files
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" onclick="filterFiles('excel')">
+                Excel
+            </button>
+            <button type="button" class="btn btn-outline-info btn-sm" onclick="filterFiles('csv')">
+                CSV
+            </button>
+            <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterFiles('reports')">
+                Reports
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="filesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>File Name</th>
+                        <th>Tool</th>
+                        <th>Size</th>
+                        <th>Modified</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr data-file-type="{{ get_file_type(file.name) }}" data-tool="{{ file.tool }}">
+                        <td>
+                            <i class="fas fa-{{ get_file_icon(file.name) }} me-2"></i>
+                            <strong>{{ file.name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ file.tool }}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted">{{ format_file_size(file.size) }}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted" title="{{ file.modified.strftime('%Y-%m-%d %H:%M:%S') }}">
+                                {{ time_ago(file.modified) }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('download_file', filename=file.path) }}" 
+                                   class="btn btn-outline-primary" 
+                                   title="Download">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% if file.name.endswith(('.html', '.txt')) %}
+                                <button type="button" 
+                                        class="btn btn-outline-info" 
+                                        onclick="previewFile('{{ file.path }}')"
+                                        title="Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% endif %}
+                                <button type="button" 
+                                        class="btn btn-outline-secondary" 
+                                        onclick="showFileInfo('{{ file.name }}', '{{ file.tool }}', '{{ format_file_size(file.size) }}', '{{ file.modified.strftime('%Y-%m-%d %H:%M:%S') }}')"
+                                        title="Info">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-folder-open fa-5x text-muted mb-3"></i>
+    <h3 class="text-muted">No Results Yet</h3>
+    <p class="text-muted">Run some SEO tools to generate reports and analysis results.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">
+        <i class="fas fa-play me-2"></i>Run Your First Analysis
+    </a>
+</div>
+{% endif %}
+
+<!-- File Info Modal -->
+<div class="modal fade" id="fileInfoModal" tabindex="-1" aria-labelledby="fileInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fileInfoModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>File Information
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="fileInfoContent">
+                <!-- File info will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File Preview Modal -->
+<div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filePreviewModalLabel">
+                    <i class="fas fa-eye me-2"></i>File Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="filePreviewContent" style="max-height: 70vh; overflow-y: auto;">
+                <!-- File preview will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const iconMap = {
+        'xlsx': 'file-excel',
+        'xls': 'file-excel',
+        'csv': 'file-csv',
+        'json': 'file-code',
+        'html': 'file-code',
+        'txt': 'file-alt',
+        'pdf': 'file-pdf',
+        'png': 'file-image',
+        'jpg': 'file-image',
+        'jpeg': 'file-image'
+    };
+    return iconMap[ext] || 'file';
+}
+
+function getFileType(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    if (['xlsx', 'xls'].includes(ext)) return 'excel';
+    if (ext === 'csv') return 'csv';
+    if (['html', 'txt', 'json'].includes(ext)) return 'reports';
+    return 'other';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function timeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+}
+
+function filterFiles(type) {
+    const rows = $('#filesTable tbody tr');
+    
+    // Update active button
+    $('.btn-group .btn').removeClass('active');
+    $(`button[onclick="filterFiles('${type}')"]`).addClass('active');
+    
+    if (type === 'all') {
+        rows.show();
+    } else {
+        rows.hide();
+        rows.filter(`[data-file-type="${type}"]`).show();
+    }
+}
+
+function showFileInfo(name, tool, size, modified) {
+    const content = `
+        <dl class="row">
+            <dt class="col-sm-4">File Name:</dt>
+            <dd class="col-sm-8">${name}</dd>
+            
+            <dt class="col-sm-4">Generated By:</dt>
+            <dd class="col-sm-8"><span class="badge bg-secondary">${tool}</span></dd>
+            
+            <dt class="col-sm-4">File Size:</dt>
+            <dd class="col-sm-8">${size}</dd>
+            
+            <dt class="col-sm-4">Last Modified:</dt>
+            <dd class="col-sm-8">${modified}</dd>
+            
+            <dt class="col-sm-4">File Type:</dt>
+            <dd class="col-sm-8">
+                <i class="fas fa-${getFileIcon(name)} me-1"></i>
+                ${name.split('.').pop().toUpperCase()}
+            </dd>
+        </dl>
+    `;
+    
+    $('#fileInfoContent').html(content);
+    $('#fileInfoModal').modal('show');
+}
+
+function previewFile(filepath) {
+    $('#filePreviewContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+    $('#filePreviewModal').modal('show');
+    
+    // In a real implementation, you'd fetch the file content via AJAX
+    // For now, we'll show a placeholder
+    setTimeout(() => {
+        $('#filePreviewContent').html(`
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                File preview is not yet implemented. Please download the file to view its contents.
+            </div>
+            <div class="code-output">
+                File path: ${filepath}
+            </div>
+        `);
+    }, 1000);
+}
+
+$(document).ready(function() {
+    // Set default filter to 'all'
+    filterFiles('all');
+    
+    // Make the first filter button active
+    $('.btn-group .btn').first().addClass('active');
+});
+</script>
+{% endblock %}

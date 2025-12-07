@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}SEO Tools Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4 text-center mb-3">
+            <i class="fas fa-chart-line text-primary me-3"></i>SEO Tools Dashboard
+        </h1>
+        <p class="lead text-center text-muted">
+            Unified interface for all your SEO analysis and optimization tools
+        </p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                <h4>6</h4>
+                <p class="mb-0">Analytics Tools</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-magic fa-2x mb-2"></i>
+                <h4>5</h4>
+                <p class="mb-0">Content Optimization</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-cogs fa-2x mb-2"></i>
+                <h4>5</h4>
+                <p class="mb-0">Technical SEO</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-scissors fa-2x mb-2"></i>
+                <h4>3</h4>
+                <p class="mb-0">Content Strategy</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics & Reporting Tools -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-primary mb-3">
+            <i class="fas fa-chart-line me-2"></i>Analytics & Reporting
+        </h3>
+        <p class="text-muted mb-4">Comprehensive data analysis and performance reporting tools</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    {% set analytics_tools = ['all_hands_report', 'ga4_traffic_analyzer', 'gsc_analyzer', 'url_comparison', 'blog_performance', 'seo_analyzer'] %}
+    {% for tool_id in analytics_tools %}
+        {% if tool_id in tools %}
+            {% set tool = tools[tool_id] %}
+            <div class="col-lg-6 col-md-6 mb-4">
+                <div class="card tool-card h-100 shadow-sm border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>{{ tool.name }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text text-muted">{{ tool.description }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-cogs me-1"></i>{{ tool.parameters|length }} Parameters
+                            </small>
+                            <span class="badge bg-secondary">
+                                {% set required_count = 0 %}
+                                {% for param in tool.parameters.values() %}
+                                    {% if param.required %}
+                                        {% set required_count = required_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ required_count }} Required
+                            </span>
+                        </div>
+
+                        <!-- Parameter Preview -->
+                        <div class="parameter-preview mb-3">
+                            <small class="text-muted">Key Parameters:</small>
+                            <ul class="list-unstyled small">
+                                {% for param_name, param in tool.parameters.items() %}
+                                    {% if param.required and loop.index <= 3 %}
+                                    <li>
+                                        <i class="fas fa-{{ get_param_icon(param.type) }} me-1"></i>
+                                        {{ param.label }}
+                                        <span class="required">*</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if required_count > 3 %}
+                                <li><small class="text-muted">+ more...</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('tool_page', tool_id=tool_id) }}" class="btn btn-primary w-100">
+                            <i class="fas fa-play me-2"></i>Configure & Run
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Content Optimization Tools -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-success mb-3">
+            <i class="fas fa-magic me-2"></i>Content Optimization
+        </h3>
+        <p class="text-muted mb-4">AI-powered content analysis and optimization tools</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    {% set content_tools = ['seo_content_optimizer', 'seo_meta_analyzer', 'ollama_title_optimizer', 'ollama_description_optimizer', 'ai_visibility_auditor'] %}
+    {% for tool_id in content_tools %}
+        {% if tool_id in tools %}
+            {% set tool = tools[tool_id] %}
+            <div class="col-lg-6 col-md-6 mb-4">
+                <div class="card tool-card h-100 shadow-sm border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>{{ tool.name }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text text-muted">{{ tool.description }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-cogs me-1"></i>{{ tool.parameters|length }} Parameters
+                            </small>
+                            <span class="badge bg-secondary">
+                                {% set required_count = 0 %}
+                                {% for param in tool.parameters.values() %}
+                                    {% if param.required %}
+                                        {% set required_count = required_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ required_count }} Required
+                            </span>
+                        </div>
+
+                        <!-- Parameter Preview -->
+                        <div class="parameter-preview mb-3">
+                            <small class="text-muted">Key Parameters:</small>
+                            <ul class="list-unstyled small">
+                                {% for param_name, param in tool.parameters.items() %}
+                                    {% if param.required and loop.index <= 3 %}
+                                    <li>
+                                        <i class="fas fa-{{ get_param_icon(param.type) }} me-1"></i>
+                                        {{ param.label }}
+                                        <span class="required">*</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if required_count > 3 %}
+                                <li><small class="text-muted">+ more...</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('tool_page', tool_id=tool_id) }}" class="btn btn-success w-100">
+                            <i class="fas fa-play me-2"></i>Configure & Run
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Technical SEO & Monitoring -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-info mb-3">
+            <i class="fas fa-cogs me-2"></i>Technical SEO & Monitoring
+        </h3>
+        <p class="text-muted mb-4">Technical analysis, indexing, and site monitoring tools</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    {% set technical_tools = ['indexation_monitor', 'gsc_indexer', 'sitemap_index_status', 'seo_auto_qa', 'seo_perf_optimizer'] %}
+    {% for tool_id in technical_tools %}
+        {% if tool_id in tools %}
+            {% set tool = tools[tool_id] %}
+            <div class="col-lg-6 col-md-6 mb-4">
+                <div class="card tool-card h-100 shadow-sm border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>{{ tool.name }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text text-muted">{{ tool.description }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-cogs me-1"></i>{{ tool.parameters|length }} Parameters
+                            </small>
+                            <span class="badge bg-secondary">
+                                {% set required_count = 0 %}
+                                {% for param in tool.parameters.values() %}
+                                    {% if param.required %}
+                                        {% set required_count = required_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ required_count }} Required
+                            </span>
+                        </div>
+
+                        <!-- Parameter Preview -->
+                        <div class="parameter-preview mb-3">
+                            <small class="text-muted">Key Parameters:</small>
+                            <ul class="list-unstyled small">
+                                {% for param_name, param in tool.parameters.items() %}
+                                    {% if param.required and loop.index <= 3 %}
+                                    <li>
+                                        <i class="fas fa-{{ get_param_icon(param.type) }} me-1"></i>
+                                        {{ param.label }}
+                                        <span class="required">*</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if required_count > 3 %}
+                                <li><small class="text-muted">+ more...</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('tool_page', tool_id=tool_id) }}" class="btn btn-info w-100">
+                            <i class="fas fa-play me-2"></i>Configure & Run
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Content Strategy Tools -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-warning mb-3">
+            <i class="fas fa-scissors me-2"></i>Content Strategy
+        </h3>
+        <p class="text-muted mb-4">Strategic content analysis and optimization tools</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    {% set strategy_tools = ['internal_linking', 'pruning_tool', 'csv_merger'] %}
+    {% for tool_id in strategy_tools %}
+        {% if tool_id in tools %}
+            {% set tool = tools[tool_id] %}
+            <div class="col-lg-6 col-md-6 mb-4">
+                <div class="card tool-card h-100 shadow-sm border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>{{ tool.name }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text text-muted">{{ tool.description }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-cogs me-1"></i>{{ tool.parameters|length }} Parameters
+                            </small>
+                            <span class="badge bg-secondary">
+                                {% set required_count = 0 %}
+                                {% for param in tool.parameters.values() %}
+                                    {% if param.required %}
+                                        {% set required_count = required_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ required_count }} Required
+                            </span>
+                        </div>
+
+                        <!-- Parameter Preview -->
+                        <div class="parameter-preview mb-3">
+                            <small class="text-muted">Key Parameters:</small>
+                            <ul class="list-unstyled small">
+                                {% for param_name, param in tool.parameters.items() %}
+                                    {% if param.required and loop.index <= 3 %}
+                                    <li>
+                                        <i class="fas fa-{{ get_param_icon(param.type) }} me-1"></i>
+                                        {{ param.label }}
+                                        <span class="required">*</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if required_count > 3 %}
+                                <li><small class="text-muted">+ more...</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('tool_page', tool_id=tool_id) }}" class="btn btn-warning w-100">
+                            <i class="fas fa-play me-2"></i>Configure & Run
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Quick Start Guide -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-rocket me-2"></i>Quick Start Guide</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <span class="h4 mb-0">1</span>
+                            </div>
+                        </div>
+                        <h5>Choose Your Tool</h5>
+                        <p class="text-muted">Select the SEO tool that matches your analysis needs from the dashboard above.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <span class="h4 mb-0">2</span>
+                            </div>
+                        </div>
+                        <h5>Configure Parameters</h5>
+                        <p class="text-muted">Fill in the required parameters like API keys, URLs, and date ranges. Your settings are saved automatically.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <span class="h4 mb-0">3</span>
+                            </div>
+                        </div>
+                        <h5>Download Results</h5>
+                        <p class="text-muted">Run the analysis and download comprehensive reports in CSV, Excel, or HTML format.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Add any dashboard-specific JavaScript here
+    
+    // Animate cards on load
+    $('.tool-card').each(function(index) {
+        $(this).delay(index * 100).animate({opacity: 1}, 500);
+    });
+});
+
+// Helper functions for icons (these would typically be in the Flask app)
+function getToolIcon(toolId) {
+    const iconMap = {
+        'all_hands_report': 'chart-bar',
+        'ga4_traffic_analyzer': 'analytics',
+        'gsc_indexer': 'search',
+        'indexation_monitor': 'eye',
+        'internal_linking': 'link',
+        'pruning_tool': 'cut',
+        'seo_auto_qa': 'check-circle',
+        'seo_content_optimizer': 'magic',
+        'seo_meta_analyzer': 'tags',
+        'seo_perf_optimizer': 'tachometer-alt',
+        'url_comparison': 'balance-scale',
+        'gsc_analyzer': 'chart-line',
+        'blog_performance': 'blog'
+    };
+    return iconMap[toolId] || 'cog';
+}
+
+function getParamIcon(paramType) {
+    const iconMap = {
+        'text': 'keyboard',
+        'file': 'file',
+        'date': 'calendar',
+        'number': 'hashtag',
+        'select': 'list',
+        'multiselect': 'list-ul',
+        'checkbox': 'check-square',
+        'textarea': 'edit',
+        'password': 'key'
+    };
+    return iconMap[paramType] || 'cog';
+}
+</script>
+{% endblock %}

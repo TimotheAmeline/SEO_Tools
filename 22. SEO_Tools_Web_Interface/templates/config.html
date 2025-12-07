@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - SEO Tools Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-cog me-2"></i>Configuration Management</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+        <p class="text-muted">Manage saved configurations for all your SEO tools</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-list me-2"></i>Saved Configurations</h4>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="exportConfig()">
+                        <i class="fas fa-download me-1"></i>Export
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="$('#importInput').click()">
+                        <i class="fas fa-upload me-1"></i>Import
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearAllConfig()">
+                        <i class="fas fa-trash me-1"></i>Clear All
+                    </button>
+                </div>
+                <input type="file" id="importInput" style="display: none;" accept=".json" onchange="importConfig(this)">
+            </div>
+            <div class="card-body">
+                {% if config %}
+                    <div class="accordion" id="configAccordion">
+                        {% for tool_id, tool_config in config.items() %}
+                        {% set tool = tools.get(tool_id, {}) %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ tool_id }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ tool_id }}" aria-expanded="false">
+                                    <i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>
+                                    <strong>{{ tool.get('name', tool_id.title().replace('_', ' ')) }}</strong>
+                                    <span class="badge bg-primary ms-2">{{ tool_config|length }} parameters</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ tool_id }}" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                                <div class="accordion-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Tool Description:</small>
+                                            <p class="mb-2">{{ tool.get('description', 'No description available') }}</p>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <a href="{{ url_for('tool_page', tool_id=tool_id) }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-edit me-1"></i>Edit & Run
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteToolConfig('{{ tool_id }}')">
+                                                <i class="fas fa-trash me-1"></i>Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Parameter</th>
+                                                    <th>Value</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for param_name, param_value in tool_config.items() %}
+                                                {% set param_def = tool.get('parameters', {}).get(param_name, {}) %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ param_def.get('label', param_name.replace('_', ' ').title()) }}</strong>
+                                                        {% if param_def.get('required') %}
+                                                            <span class="text-danger">*</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if param_def.get('type') == 'password' %}
+                                                            <span class="text-muted">••••••••</span>
+                                                        {% elif param_def.get('type') == 'file' %}
+                                                            <i class="fas fa-file me-1"></i>
+                                                            <code>{{ param_value | basename if param_value else 'Not set' }}</code>
+                                                        {% elif param_def.get('type') == 'checkbox' %}
+                                                            <span class="badge bg-{{ 'success' if param_value else 'secondary' }}">
+                                                                {{ 'Enabled' if param_value else 'Disabled' }}
+                                                            </span>
+                                                        {% elif param_def.get('type') == 'multiselect' and param_value is iterable and param_value is not string %}
+                                                            {% for item in param_value %}
+                                                                <span class="badge bg-info me-1">{{ item }}</span>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <code>{{ param_value if param_value else 'Not set' }}</code>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark">
+                                                            <i class="fas fa-{{ get_param_icon(param_def.get('type', 'text')) }} me-1"></i>
+                                                            {{ param_def.get('type', 'text') }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Configurations Saved</h4>
+                        <p class="text-muted">Configure and run some tools to save their settings here.</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Configure Your First Tool
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Configuration Statistics -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie me-2"></i>Configuration Statistics</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-8">Configured Tools:</dt>
+                    <dd class="col-sm-4">{{ config|length }}</dd>
+                    
+                    <dt class="col-sm-8">Total Parameters:</dt>
+                    <dd class="col-sm-4">
+                        {% set total = 0 %}
+                        {% for tool_config in config.values() %}
+                            {% set total = total + tool_config|length %}
+                        {% endfor %}
+                        {{ total }}
+                    </dd>
+                    
+                    <dt class="col-sm-8">Available Tools:</dt>
+                    <dd class="col-sm-4">{{ tools|length }}</dd>
+                    
+                    <dt class="col-sm-8">Coverage:</dt>
+                    <dd class="col-sm-4">{{ "%.0f"|format((config|length / tools|length * 100) if tools else 0) }}%</dd>
+                </dl>
+                
+                {% if config|length < tools|length %}
+                <div class="alert alert-info alert-sm">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <small>You have {{ tools|length - config|length }} unconfigured tools</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" onclick="validateAllConfigs()">
+                        <i class="fas fa-check-circle me-2"></i>Validate All Configs
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="showConfigSummary()">
+                        <i class="fas fa-eye me-2"></i>View Summary
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" onclick="backupConfig()">
+                        <i class="fas fa-save me-2"></i>Create Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recently Configured -->
+        {% if config %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-history me-2"></i>Quick Access</h6>
+            </div>
+            <div class="card-body">
+                {% for tool_id in config.keys() | list | reverse %}
+                {% if loop.index <= 5 %}
+                {% set tool = tools.get(tool_id, {}) %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>
+                        <small>{{ tool.get('name', tool_id.title().replace('_', ' ')) }}</small>
+                    </div>
+                    <a href="{{ url_for('tool_page', tool_id=tool_id) }}" class="btn btn-outline-primary btn-sm">
+                        Run
+                    </a>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Configuration Summary Modal -->
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="summaryModalLabel">
+                    <i class="fas fa-chart-bar me-2"></i>Configuration Summary
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="summaryContent">
+                <!-- Summary content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getToolIcon(toolId) {
+    const iconMap = {
+        'all_hands_report': 'chart-bar',
+        'ga4_traffic_analyzer': 'analytics',
+        'gsc_indexer': 'search',
+        'indexation_monitor': 'eye',
+        'internal_linking': 'link',
+        'pruning_tool': 'cut',
+        'seo_auto_qa': 'check-circle',
+        'seo_content_optimizer': 'magic',
+        'seo_meta_analyzer': 'tags',
+        'seo_perf_optimizer': 'tachometer-alt',
+        'url_comparison': 'balance-scale',
+        'gsc_analyzer': 'chart-line'
+    };
+    return iconMap[toolId] || 'cog';
+}
+
+function getParamIcon(paramType) {
+    const iconMap = {
+        'text': 'keyboard',
+        'file': 'file',
+        'date': 'calendar',
+        'number': 'hashtag',
+        'select': 'list',
+        'multiselect': 'list-ul',
+        'checkbox': 'check-square',
+        'textarea': 'edit',
+        'password': 'key'
+    };
+    return iconMap[paramType] || 'cog';
+}
+
+function deleteToolConfig(toolId) {
+    if (confirm(`Are you sure you want to delete the configuration for ${toolId}?`)) {
+        const config = {{ config | tojson }};
+        delete config[toolId];
+        
+        $.ajax({
+            url: '{{ url_for("config_page") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(config),
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                alert('Error deleting configuration: ' + error);
+            }
+        });
+    }
+}
+
+function clearAllConfig() {
+    if (confirm('Are you sure you want to clear ALL configurations? This action cannot be undone.')) {
+        $.ajax({
+            url: '{{ url_for("config_page") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({}),
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                alert('Error clearing configurations: ' + error);
+            }
+        });
+    }
+}
+
+function exportConfig() {
+    const config = {{ config | tojson }};
+    const dataStr = JSON.stringify(config, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `seo-tools-config-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+}
+
+function importConfig(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            try {
+                const importedConfig = JSON.parse(e.target.result);
+                
+                if (confirm('This will replace your current configuration. Continue?')) {
+                    $.ajax({
+                        url: '{{ url_for("config_page") }}',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(importedConfig),
+                        success: function(response) {
+                            location.reload();
+                        },
+                        error: function(xhr, status, error) {
+                            alert('Error importing configuration: ' + error);
+                        }
+                    });
+                }
+            } catch (error) {
+                alert('Invalid JSON file: ' + error.message);
+            }
+        };
+        
+        reader.readAsText(file);
+    }
+}
+
+function validateAllConfigs() {
+    const config = {{ config | tojson }};
+    const tools = {{ tools | tojson }};
+    const issues = [];
+    
+    for (const [toolId, toolConfig] of Object.entries(config)) {
+        const toolDef = tools[toolId];
+        if (!toolDef) {
+            issues.push(`Unknown tool: ${toolId}`);
+            continue;
+        }
+        
+        // Check required parameters
+        for (const [paramName, paramDef] of Object.entries(toolDef.parameters)) {
+            if (paramDef.required && (!toolConfig[paramName] || toolConfig[paramName] === '')) {
+                issues.push(`${toolDef.name}: Missing required parameter '${paramDef.label}'`);
+            }
+        }
+    }
+    
+    if (issues.length === 0) {
+        alert('✅ All configurations are valid!');
+    } else {
+        alert('❌ Configuration issues found:\n\n' + issues.join('\n'));
+    }
+}
+
+function showConfigSummary() {
+    const config = {{ config | tojson }};
+    const tools = {{ tools | tojson }};
+    
+    let content = '<div class="row">';
+    
+    for (const [toolId, toolConfig] of Object.entries(config)) {
+        const toolDef = tools[toolId];
+        const requiredParams = Object.values(toolDef.parameters || {}).filter(p => p.required).length;
+        const configuredRequired = Object.entries(toolDef.parameters || {})
+            .filter(([name, def]) => def.required && toolConfig[name])
+            .length;
+        
+        content += `
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6><i class="fas fa-${getToolIcon(toolId)} me-2"></i>${toolDef.name || toolId}</h6>
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar" style="width: ${(configuredRequired/requiredParams*100)}%"></div>
+                        </div>
+                        <small class="text-muted">${configuredRequired}/${requiredParams} required parameters configured</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    content += '</div>';
+    
+    $('#summaryContent').html(content);
+    $('#summaryModal').modal('show');
+}
+
+function backupConfig() {
+    const config = {{ config | tojson }};
+    const backup = {
+        timestamp: new Date().toISOString(),
+        config: config
+    };
+    
+    const dataStr = JSON.stringify(backup, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `seo-tools-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+}
+</script>
+{% endblock %}

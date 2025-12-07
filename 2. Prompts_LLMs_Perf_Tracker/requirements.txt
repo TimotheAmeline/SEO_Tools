@@ -1,0 +1,8 @@
+streamlit
+pandas
+openai
+requests
+rich
+python-dotenv
+anthropic
+#google-generativeai

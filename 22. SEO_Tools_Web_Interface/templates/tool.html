@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tool.name }} - SEO Tools Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ tool.name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-{{ get_tool_icon(tool_id) }} me-2"></i>{{ tool.name }}</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+        <p class="text-muted">{{ tool.description }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-cog me-2"></i>Configuration</h4>
+            </div>
+            <div class="card-body">
+                <form id="toolForm">
+                    {% for param_name, param in tool.parameters.items() %}
+                    <div class="mb-3">
+                        <label for="{{ param_name }}" class="form-label">
+                            <i class="fas fa-{{ get_param_icon(param.type) }} me-1"></i>
+                            {{ param.label }}
+                            {% if param.required %}
+                                <span class="required">*</span>
+                            {% endif %}
+                        </label>
+                        
+                        {% if param.type == 'text' %}
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="{{ param_name }}" 
+                                   name="{{ param_name }}"
+                                   {% if param.required %}required{% endif %}
+                                   {% if param.placeholder %}placeholder="{{ param.placeholder }}"{% endif %}
+                                   value="{{ saved_params.get(param_name, param.get('default', '')) }}">
+                                   
+                        {% elif param.type == 'password' %}
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="{{ param_name }}" 
+                                   name="{{ param_name }}"
+                                   {% if param.required %}required{% endif %}
+                                   {% if param.placeholder %}placeholder="{{ param.placeholder }}"{% endif %}>
+                                   
+                        {% elif param.type == 'file' %}
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="{{ param_name }}" 
+                                   name="{{ param_name }}"
+                                   {% if param.required %}required{% endif %}
+                                   {% if param.accept %}accept="{{ param.accept }}"{% endif %}>
+                            {% if saved_params.get(param_name) %}
+                                <small class="text-muted">Previously uploaded: {{ saved_params.get(param_name) }}</small>
+                            {% elif param.get('default') %}
+                                <small class="text-muted">Default file: {{ param.get('default') }}</small>
+                            {% endif %}
+                            
+                        {% elif param.type == 'date' %}
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="{{ param_name }}" 
+                                   name="{{ param_name }}"
+                                   {% if param.required %}required{% endif %}
+                                   value="{{ saved_params.get(param_name, param.get('default', '')) }}">
+                                   
+                        {% elif param.type == 'number' %}
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="{{ param_name }}" 
+                                   name="{{ param_name }}"
+                                   {% if param.required %}required{% endif %}
+                                   {% if param.min %}min="{{ param.min }}"{% endif %}
+                                   {% if param.max %}max="{{ param.max }}"{% endif %}
+                                   {% if param.step %}step="{{ param.step }}"{% endif %}
+                                   value="{{ saved_params.get(param_name, param.get('default', '')) }}">
+                                   
+                        {% elif param.type == 'select' %}
+                            <select class="form-select" 
+                                    id="{{ param_name }}" 
+                                    name="{{ param_name }}"
+                                    {% if param.required %}required{% endif %}>
+                                <option value="">Select an option...</option>
+                                {% for option in param.options %}
+                                    <option value="{{ option }}" 
+                                            {% if saved_params.get(param_name) == option or (not saved_params.get(param_name) and param.get('default') == option) %}selected{% endif %}>
+                                        {{ option }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            
+                        {% elif param.type == 'multiselect' %}
+                            <select class="form-select" 
+                                    id="{{ param_name }}" 
+                                    name="{{ param_name }}"
+                                    multiple>
+                                {% for option in param.options %}
+                                    <option value="{{ option }}" 
+                                            {% if option in saved_params.get(param_name, param.get('default', [])) %}selected{% endif %}>
+                                        {{ option }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Hold Ctrl/Cmd to select multiple options</small>
+                            
+                        {% elif param.type == 'checkbox' %}
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       id="{{ param_name }}" 
+                                       name="{{ param_name }}"
+                                       {% if saved_params.get(param_name) or (not saved_params.get(param_name) and param.get('default')) %}checked{% endif %}>
+                                <label class="form-check-label" for="{{ param_name }}">
+                                    Enable this option
+                                </label>
+                            </div>
+                            
+                        {% elif param.type == 'textarea' %}
+                            <textarea class="form-control" 
+                                      id="{{ param_name }}" 
+                                      name="{{ param_name }}"
+                                      rows="4"
+                                      {% if param.required %}required{% endif %}
+                                      {% if param.placeholder %}placeholder="{{ param.placeholder }}"{% endif %}>{{ saved_params.get(param_name, param.get('default', '')) }}</textarea>
+                        {% endif %}
+                        
+                        {% if param.get('help') %}
+                            <small class="text-muted">{{ param.help }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="saveConfig()">
+                            <i class="fas fa-save me-2"></i>Save Config
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="runButton">
+                            <i class="fas fa-play me-2"></i>Run Analysis
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Tool Info Panel -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Tool Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">Parameters:</dt>
+                    <dd class="col-sm-7">{{ tool.parameters|length }}</dd>
+                    
+                    <dt class="col-sm-5">Required:</dt>
+                    <dd class="col-sm-7">{{ tool.parameters.values() | selectattr('required') | list | length }}</dd>
+                    
+                    <dt class="col-sm-5">Script:</dt>
+                    <dd class="col-sm-7"><code>{{ tool.script }}</code></dd>
+                </dl>
+            </div>
+        </div>
+        
+        <!-- Status Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tasks me-2"></i>Execution Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="statusPanel">
+                    <p class="text-muted">
+                        <i class="fas fa-clock me-2"></i>Ready to run
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-labelledby="resultsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultsModalLabel">
+                    <i class="fas fa-chart-line me-2"></i>Execution Results
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resultsContent">
+                    <!-- Results will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('results_page') }}" class="btn btn-primary">
+                    <i class="fas fa-download me-2"></i>View All Results
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let uploadedFiles = {};
+
+function getToolIcon(toolId) {
+    const iconMap = {
+        'all_hands_report': 'chart-bar',
+        'ga4_traffic_analyzer': 'analytics',
+        'gsc_indexer': 'search',
+        'indexation_monitor': 'eye',
+        'internal_linking': 'link',
+        'pruning_tool': 'cut',
+        'seo_auto_qa': 'check-circle',
+        'seo_content_optimizer': 'magic',
+        'seo_meta_analyzer': 'tags',
+        'seo_perf_optimizer': 'tachometer-alt',
+        'url_comparison': 'balance-scale',
+        'gsc_analyzer': 'chart-line',
+        'blog_performance': 'blog'
+    };
+    return iconMap[toolId] || 'cog';
+}
+
+function getParamIcon(paramType) {
+    const iconMap = {
+        'text': 'keyboard',
+        'file': 'file',
+        'date': 'calendar',
+        'number': 'hashtag',
+        'select': 'list',
+        'multiselect': 'list-ul',
+        'checkbox': 'check-square',
+        'textarea': 'edit',
+        'password': 'key'
+    };
+    return iconMap[paramType] || 'cog';
+}
+
+function updateStatus(message, type = 'info') {
+    const iconMap = {
+        'info': 'info-circle',
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'running': 'spinner'
+    };
+    
+    const colorMap = {
+        'info': 'text-info',
+        'success': 'text-success',
+        'error': 'text-danger',
+        'warning': 'text-warning',
+        'running': 'text-warning'
+    };
+    
+    const icon = iconMap[type] || 'info-circle';
+    const color = colorMap[type] || 'text-info';
+    const spinClass = type === 'running' ? 'fa-spin' : '';
+    
+    $('#statusPanel').html(`
+        <p class="${color}">
+            <i class="fas fa-${icon} ${spinClass} me-2"></i>${message}
+        </p>
+    `);
+}
+
+function saveConfig() {
+    const formData = new FormData($('#toolForm')[0]);
+    const config = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if ($(`[name="${key}"]`).attr('type') === 'checkbox') {
+            config[key] = $(`[name="${key}"]`).is(':checked');
+        } else if ($(`[name="${key}"]`).prop('multiple')) {
+            config[key] = $(`[name="${key}"]`).val();
+        } else if ($(`[name="${key}"]`).attr('type') !== 'file') {
+            config[key] = value;
+        }
+    }
+    
+    // Add uploaded file paths
+    for (let [key, value] of Object.entries(uploadedFiles)) {
+        config[key] = value;
+    }
+    
+    $.ajax({
+        url: '{{ url_for("config_page") }}',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({'{{ tool_id }}': config}),
+        success: function(response) {
+            updateStatus('Configuration saved successfully', 'success');
+            setTimeout(() => updateStatus('Ready to run'), 3000);
+        },
+        error: function(xhr, status, error) {
+            updateStatus('Error saving configuration: ' + error, 'error');
+        }
+    });
+}
+
+function uploadFile(input, paramName) {
+    if (input.files && input.files[0]) {
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        
+        updateStatus('Uploading file...', 'running');
+        
+        $.ajax({
+            url: '{{ url_for("upload_file") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                uploadedFiles[paramName] = response.filepath;
+                updateStatus('File uploaded successfully', 'success');
+                setTimeout(() => updateStatus('Ready to run'), 3000);
+            },
+            error: function(xhr, status, error) {
+                updateStatus('Error uploading file: ' + error, 'error');
+            }
+        });
+    }
+}
+
+$(document).ready(function() {
+    // Handle file uploads
+    $('input[type="file"]').change(function() {
+        uploadFile(this, $(this).attr('name'));
+    });
+    
+    // Handle form submission
+    $('#toolForm').submit(function(e) {
+        e.preventDefault();
+        
+        const runButton = $('#runButton');
+        const originalText = showSpinner(runButton);
+        updateStatus('Running analysis...', 'running');
+        
+        // Collect form data
+        const formData = new FormData(this);
+        const params = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if ($(`[name="${key}"]`).attr('type') === 'checkbox') {
+                params[key] = $(`[name="${key}"]`).is(':checked');
+            } else if ($(`[name="${key}"]`).prop('multiple')) {
+                params[key] = $(`[name="${key}"]`).val();
+            } else if ($(`[name="${key}"]`).attr('type') !== 'file') {
+                params[key] = value;
+            }
+        }
+        
+        // Add uploaded file paths
+        for (let [key, value] of Object.entries(uploadedFiles)) {
+            params[key] = value;
+        }
+        
+        // Execute tool
+        $.ajax({
+            url: '{{ url_for("run_tool", tool_id=tool_id) }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(params),
+            success: function(response) {
+                hideSpinner(runButton, originalText);
+                
+                if (response.success) {
+                    updateStatus('Analysis completed successfully', 'success');
+                    showResults(response);
+                } else {
+                    updateStatus('Analysis failed', 'error');
+                    showResults(response);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideSpinner(runButton, originalText);
+                updateStatus('Error executing tool: ' + error, 'error');
+            }
+        });
+    });
+});
+
+function showResults(response) {
+    let content = '';
+    
+    if (response.success) {
+        content += `
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Analysis completed successfully!
+            </div>
+        `;
+    } else {
+        content += `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Analysis failed (Exit code: ${response.return_code})
+            </div>
+        `;
+    }
+    
+    if (response.stdout) {
+        content += `
+            <div class="mb-3">
+                <h6>Output:</h6>
+                <div class="code-output">${response.stdout}</div>
+            </div>
+        `;
+    }
+    
+    if (response.stderr) {
+        content += `
+            <div class="mb-3">
+                <h6>Errors/Warnings:</h6>
+                <div class="code-output text-danger">${response.stderr}</div>
+            </div>
+        `;
+    }
+    
+    $('#resultsContent').html(content);
+    $('#resultsModal').modal('show');
+}
+</script>
+{% endblock %}
